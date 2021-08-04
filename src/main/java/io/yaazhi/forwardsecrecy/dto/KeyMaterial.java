@@ -22,4 +22,8 @@ public class KeyMaterial{
     @NonNull
     @JsonProperty("DHPublicKey")
     DHPublicKey dhPublicKey;
+    // Add Nonce as a property for the KeyMaterial object
+    @JsonProperty("Nonce")
+    @NonNull
+    String nonce;
 }
