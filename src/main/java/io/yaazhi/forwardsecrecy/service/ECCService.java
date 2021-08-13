@@ -18,6 +18,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.logging.Level;
+import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
@@ -30,6 +31,7 @@ import io.yaazhi.forwardsecrecy.dto.DHPublicKey;
 import io.yaazhi.forwardsecrecy.dto.KeyMaterial;
 import io.yaazhi.forwardsecrecy.dto.SerializedKeyPair;
 import lombok.extern.java.Log;
+import java.util.Base64;
 
 @Log
 @Service
@@ -75,7 +77,14 @@ public class ECCService {
         df.setTimeZone(tz);
         String expiryAsISO = df.format(cl.getTime());
         final DHPublicKey dhPublicKey = new DHPublicKey(expiryAsISO,"",publicKey);
-        final KeyMaterial keyMaterial = new KeyMaterial(keyDerivationAlgorithm,curve,"",dhPublicKey);
+        // Generate 256-bit encoded Nonce
+        byte[] random = new byte[16];
+        SecureRandom sr =  new SecureRandom();
+        sr.nextBytes(random);
+        String nonce = this.convertBytesToHex(random);
+        String encoded_nonce = Base64.getEncoder().encodeToString(nonce.getBytes());
+        // Pass the encoded nonce to KeyMaterial
+        final KeyMaterial keyMaterial = new KeyMaterial(keyDerivationAlgorithm,curve,"",dhPublicKey, encoded_nonce);
         final SerializedKeyPair serializedKeyPair = new SerializedKeyPair(privateKey, keyMaterial);
         return serializedKeyPair;
     }
@@ -124,6 +133,15 @@ public class ECCService {
         log.log(Level.FINE, "X509 decoded");
         return factory.generatePublic(keySpec);
         }
+    
+    // util to print bytes in hex
+    private String convertBytesToHex(byte[] bytes) {
+        StringBuilder result = new StringBuilder();
+        for (byte temp : bytes) {
+            result.append(String.format("%02x", temp));
+        }
+        return result.toString();
+    }
 
     }
 
